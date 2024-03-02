@@ -16,6 +16,7 @@ extern "C" {
 
 /* SYSTEM Settings, DONT CHANGE EASILY! --------------------------------------*/
 #define PROTOCOL_POSITION_LSBS		8191	// 统一的角度分辨率。从零点开始CW方向，将角度等分为 PROTOCOL_POSITION_LSBS 份。
+#define HALF_PROTOCOL_POSITION_LSBS		4095
 #define MAXIMUM_STEERING_HANDLE_NUM	4
 
 /* Includes ------------------------------------------------------------------*/
@@ -28,6 +29,7 @@ extern "C" {
 #endif
 
 #include "pid_regulator.h"
+#include "steering_wheel_bsp.h"
 
 #if defined(DIRECTIVE_MOTOR_M3508) | defined(MOTION_MOTOR_M3508)
 	#include "M3508_gear.h"
@@ -54,9 +56,21 @@ typedef enum
 
 typedef enum
 {
-	ENABLE_MINOR_ACR_OPTIMIZEATION,
-	DISABLE_MINOR_ACR_OPTIMIZEATION
+	ENABLE_MINOR_ARC_OPTIMIZEATION,
+	DISABLE_MINOR_ARC_OPTIMIZEATION
 }STEERING_WHEEL_ARC_OPTIMIZATION_T;
+
+typedef enum
+{
+	ENABLE_OPTIMIZATION_STATE,
+	DISABLE_OPTIMIZATION_STATE
+}STEERING_WHEEL_OPTIMIZATION_STATE_T;
+
+typedef enum
+{
+	ENABLE_MINOR_DEG_OPTIMIZEATION,
+	DISABLE_MINOR_DEG_OPTIMIZEATION
+}STEERING_WHEEL_DEG_POTIMIZATION_T;
 
 typedef enum
 {
@@ -93,8 +107,10 @@ typedef struct
 typedef struct
 {
 	uint8_t CANID;
+	int8_t invert_flag;
 	STEERING_WHEEL_ENABLE_T				enable;
 	STEERING_WHEEL_ARC_OPTIMIZATION_T	arc_optimization;
+	STEERING_WHEEL_DEG_POTIMIZATION_T   deg_optimization;
 }steering_wheel_parameter_t;
 
 typedef struct
@@ -170,11 +186,15 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_StatusUpdate(steering_wheel_t *steering_w
 STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolPosition(steering_wheel_t *steering_wheel, uint16_t protocol_position);
 STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolSpeed(steering_wheel_t *steering_wheel, uint16_t protocol_speed);
 
+STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolDegMode(steering_wheel_t *steering_wheel, uint8_t deg_mode);
+STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolArcMode(steering_wheel_t *steering_wheel, uint8_t arc_mode);
+
 STEERING_WHEEL_RETURN_T Steering_Wheel_HandleInit(steering_wheel_t *steering_wheel);
 STEERING_WHEEL_RETURN_T Steering_Wheel_CommandTransmit(steering_wheel_t *steering_wheel);
 
 steering_wheel_t *Steering_FindSteeringHandle_via_CANID(uint8_t CANID);
 
+extern uint32_t total_count;
 
 /* CRITICAL Settings, NEVER CHANGE! ------------------------------------------*/
 #define STEERING_ILLEGAL_HANDLE (steering_wheel_t*)NULL

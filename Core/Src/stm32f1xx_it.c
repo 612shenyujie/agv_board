@@ -22,6 +22,8 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "tim.h"
+#include "SW_control_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,9 +59,10 @@
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
+extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN EV */
-
+void buzzer_on(uint16_t psc, uint16_t pwm);
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -86,11 +89,33 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+	int psc;
+	uint16_t pwm=2700;
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+	if(steering_wheel.parameter.CANID==0x1A)
+	{
+		psc=10;
+		buzzer_on(psc, pwm);
+	}
+	if(steering_wheel.parameter.CANID==0x1B)
+	{
+		psc=9;
+		buzzer_on(psc, pwm);
+	}
+	if(steering_wheel.parameter.CANID==0x1C)
+	{
+		psc=8;
+		buzzer_on(psc, pwm);
+	}
+	if(steering_wheel.parameter.CANID==0x1D)
+	{
+		psc=7;
+		buzzer_on(psc, pwm);
+	}
+		
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
 }
@@ -215,6 +240,20 @@ void CAN1_RX0_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM1 update interrupt.
+  */
+void TIM1_UP_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM1_UP_IRQn 0 */
+
+  /* USER CODE END TIM1_UP_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim1);
+  /* USER CODE BEGIN TIM1_UP_IRQn 1 */
+
+  /* USER CODE END TIM1_UP_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM3 global interrupt.
   */
 void TIM3_IRQHandler(void)
@@ -243,5 +282,10 @@ void CAN2_RX0_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+void buzzer_on(uint16_t psc, uint16_t pwm)
+{
+    __HAL_TIM_PRESCALER(&htim1, psc);
+    __HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_3, pwm);
 
+}
 /* USER CODE END 1 */

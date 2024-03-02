@@ -1,9 +1,9 @@
 #include "steering_wheel.h"
 #include "steering_communication.h"
+#include <cmath>
 #if defined(STM32F105) | defined(STM32F407)
 	#include "can.h"
 #endif
-
 
 
 
@@ -16,24 +16,33 @@ void Steering_Wheel_PID_HandleInit(steering_wheel_t *steering_wheel)
 	// 先把PID结构体置零
 	memset(&steering_wheel->directive_part.motor.PID_Handles	, 0, sizeof(steering_wheel->directive_part.motor.PID_Handles));
 	memset(&steering_wheel->motion_part.motor.PID_Handles		, 0, sizeof(steering_wheel->motion_part.motor.PID_Handles));
-	// 转向电机角度环 默认Kp Ki Kd 写入
-	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hDefKpGain = 1;
-	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hDefKiGain = 1;
-	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hUpperOutputLimit = 1000;
-	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hLowerOutputLimit = -1000;
+	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hDefKpGain = 7;
+	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hKpDivisorPOW2 = 6;
+	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hDefKdGain = 1;
+	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hKdDivisorPOW2 = 0;
+	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hUpperOutputLimit = 2000;
+	steering_wheel->directive_part.motor.PID_Handles.position_loop_handle.hLowerOutputLimit = -2000;
+	
 	// 转向电机速度环 默认Kp Ki Kd 写入
-	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hDefKpGain = 10;
-	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hDefKiGain = 1;
-	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hUpperOutputLimit = 1000;
-	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hLowerOutputLimit = -1000;
-	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.wUpperIntegralLimit = 1000;
-	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.wLowerIntegralLimit = -1000;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hDefKpGain = 400;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hKpDivisorPOW2 = 1;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hDefKiGain = 5;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hKiDivisorPOW2 = 2;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hUpperOutputLimit = 6000;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.hLowerOutputLimit = -6000;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.wUpperIntegralLimit = 1600;
+	steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle.wLowerIntegralLimit = -1600;
 	// 动力电机速度环 默认Kp Ki Kd 写入
-	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hDefKpGain = 1;
-	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hDefKiGain = 1;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hDefKpGain = 72;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hKpDivisorPOW2 = 2;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hDefKiGain = 20;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hKiDivisorPOW2 = 2;
 	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hDefKdGain = 0;
-	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hUpperOutputLimit = 1000;
-	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hLowerOutputLimit = -1000;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hKdDivisorPOW2 =0;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hUpperOutputLimit = 16000;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.hLowerOutputLimit = -16000;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.wUpperIntegralLimit = 1000;
+	steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle.wLowerIntegralLimit = -1000;
 	// 调用PID结构体初始化函数，数据写入PID结构体中
 	PID_HandleInit(&steering_wheel->directive_part.motor.PID_Handles.position_loop_handle);
 	PID_HandleInit(&steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle);
@@ -85,22 +94,22 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_HandleInit(steering_wheel_t *steering_whe
 		// 转向电机及其齿轮初始化
 		M3508_gear_parameter_t direction_motor_gear_init;
 		// 舵轮的传动齿轮是广义上的减速箱，所以给了减速比 (doge
-		direction_motor_gear_init.reduction_rate	= 10;
+		direction_motor_gear_init.reduction_rate	= 8;
 		direction_motor_gear_init.bus				= &M3508_bus_1;
-		direction_motor_gear_init.ESC_ID			= 8;
+		direction_motor_gear_init.ESC_ID			= 1;
 		direction_motor_gear_init.resistance_torque	= 0;
 		direction_motor_gear_init.handle			= &hcan1;
 		M3508_gear_parameter_init(&steering_wheel->directive_part.motor.M3508_kit, &direction_motor_gear_init);
 		// 动力电机及其齿轮初始化
 		M3508_gear_parameter_t motion_motor_gear_init;
-		motion_motor_gear_init.reduction_rate		= 3591 / 187.f;
+		motion_motor_gear_init.reduction_rate		= 14;
 		motion_motor_gear_init.bus					= &M3508_bus_1;
-		motion_motor_gear_init.ESC_ID				= 4;
+		motion_motor_gear_init.ESC_ID				= 2;
 		motion_motor_gear_init.resistance_torque	= 0;
 		motion_motor_gear_init.handle			= &hcan1;
 		M3508_gear_parameter_init(&steering_wheel->motion_part.motor.M3508_kit, &motion_motor_gear_init);
 	#endif
-	steering_wheel->directive_part.command.protocol_position = 0x8FFF;
+	steering_wheel->command.protocol_position = 0;
 	#if defined(DIRECTIVE_ENCODER_BRITER_ENCODER)
 		// 编码器初始化
 		briter_encoder_Init(&steering_wheel->directive_part.encoder.briter_encoder);
@@ -108,15 +117,17 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_HandleInit(steering_wheel_t *steering_whe
 		birter_encoder_init.baud_rate				= BRITER_ENCODER_SET_CAN_BAUD_RATE_1M;
 		birter_encoder_init.call_back_mode			= BRITER_ENCODER_SET_CALLBACK_REQUEST;
 		birter_encoder_init.increment_direction		= BRITER_ENCODER_INCREMENT_DIRECTION_CW;
-		birter_encoder_init.CAN_ID					= 0x0D;
+		birter_encoder_init.CAN_ID					= 0x10;
 		briter_encoder_parameter_init(&steering_wheel->directive_part.encoder.briter_encoder, &birter_encoder_init);
 		steering_wheel->directive_part.encoder.parameter.lsbs_per_encoder_round			= 1024;
-		steering_wheel->directive_part.encoder.parameter.encoder_rounds_per_part_round	= 5;
+		steering_wheel->directive_part.encoder.parameter.encoder_rounds_per_part_round	= 4;
 		steering_wheel->directive_part.encoder.parameter.lsbs_per_part_round = steering_wheel->directive_part.encoder.parameter.lsbs_per_encoder_round*steering_wheel->directive_part.encoder.parameter.encoder_rounds_per_part_round;
 	#endif
 	
 	// 初始化舵轮 CAN ID
-	steering_wheel->parameter.CANID = DEFAULT_STEERING_CAN_ID;
+	steering_wheel->parameter.CANID = A_STEERING_CAN_ID;
+	steering_wheel->parameter.invert_flag = 1;//角度优化所用
+	steering_wheel->parameter.enable = STEERING_WHEEL_ACTIVATED;
 	if (Steering_HandleListAdd(steering_wheel))
 		return STEERING_WHEEL_ERROR;
 	return STEERING_WHEEL_OK;
@@ -143,11 +154,13 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_MotorAndEncoderFeedbackUpdate(steering_wh
 		steering_wheel->directive_part.encoder.feedback.position = steering_wheel->directive_part.encoder.briter_encoder.status.total_angle;
 		// 计算角速度
 		#if defined(STM32F105)
-			steering_wheel->directive_part.encoder.feedback.get_tick = HAL_GetTick();
+			steering_wheel->directive_part.encoder.feedback.get_tick = total_count;
 		#endif
 		uint32_t dt, dw;
+	
 		dt = steering_wheel->directive_part.encoder.feedback.get_tick - steering_wheel->directive_part.encoder.feedback.last_get_tick;
 		dw = steering_wheel->directive_part.encoder.briter_encoder.status.total_angle - steering_wheel->directive_part.encoder.briter_encoder.status.last_total_angle;
+
 		steering_wheel->directive_part.encoder.feedback.speed = dw / dt;
 		steering_wheel->directive_part.encoder.feedback.speed = steering_wheel->directive_part.motor.M3508_kit.status.output_speed_rpm; // 这里测试时用的3508电机的角速度，懒得改回去了
 		briter_encoder_request_tatal_angle(&steering_wheel->directive_part.encoder.briter_encoder);
@@ -232,16 +245,36 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_MotorCommandUpdate(steering_wheel_t *stee
 	{
 		int32_t temp_err;
 		// 动力电机速度环PID
-		temp_err = steering_wheel->motion_part.motor.command.speed - steering_wheel->motion_part.motor.status.speed;
+		temp_err = steering_wheel->motion_part.command.protocol_speed*steering_wheel->parameter.invert_flag - steering_wheel->motion_part.status.protocol_speed;
 		steering_wheel->motion_part.motor.command.torque = PID_Controller(&steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle, temp_err);
 		#if defined(MOTION_MOTOR_M3508)
 			steering_wheel->motion_part.motor.M3508_kit.command.torque = steering_wheel->motion_part.motor.command.torque;
 		#endif
 		// 转向电机角度环PID
-		temp_err = steering_wheel->directive_part.command.protocol_position - steering_wheel->directive_part.status.protocol_position;
 		
+		
+		//开启角度优化模式
+		if(steering_wheel->parameter.deg_optimization==ENABLE_MINOR_DEG_OPTIMIZEATION)
+		{
+			int32_t temp_min;
+			temp_err = steering_wheel->directive_part.command.protocol_position - steering_wheel->directive_part.status.protocol_position - ((steering_wheel->parameter.invert_flag-1)/2.0f)*HALF_PROTOCOL_POSITION_LSBS;
+			if (abs(temp_err)<PROTOCOL_POSITION_LSBS-abs(temp_err))
+			temp_min = abs(temp_err);
+			else
+			temp_min = PROTOCOL_POSITION_LSBS-abs(temp_err);
+			if (temp_min > HALF_PROTOCOL_POSITION_LSBS*0.8f)
+			steering_wheel->parameter.invert_flag=-steering_wheel->parameter.invert_flag;
+			temp_err = steering_wheel->directive_part.command.protocol_position - steering_wheel->directive_part.status.protocol_position + ((steering_wheel->parameter.invert_flag-1)/2.0f)*HALF_PROTOCOL_POSITION_LSBS;
+		}
+		//关闭角度优化模式
+		else
+		{
+			temp_err = steering_wheel->directive_part.command.protocol_position - steering_wheel->directive_part.status.protocol_position;
+		}
+
+
 		// 开启优劣弧优化模式
-		if (steering_wheel->parameter.arc_optimization == ENABLE_MINOR_ACR_OPTIMIZEATION)
+		if (steering_wheel->parameter.arc_optimization == ENABLE_MINOR_ARC_OPTIMIZEATION)
 		{
 			if (temp_err > PROTOCOL_POSITION_LSBS - temp_err)
 				temp_err = -(PROTOCOL_POSITION_LSBS - temp_err);
@@ -254,10 +287,10 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_MotorCommandUpdate(steering_wheel_t *stee
 		{
 			//if ()
 		}
-		
+		//更改
 		steering_wheel->directive_part.command.protocol_speed	= PID_Controller(&steering_wheel->directive_part.motor.PID_Handles.position_loop_handle, temp_err);
+//		steering_wheel->directive_part.command.protocol_speed	= testt;
 		temp_err = steering_wheel->directive_part.command.protocol_speed - steering_wheel->directive_part.status.protocol_speed;
-		testt = temp_err;
 		steering_wheel->directive_part.motor.command.torque	= PID_Controller(&steering_wheel->directive_part.motor.PID_Handles.velocity_loop_handle, temp_err);
 		// 由于齿轮传动使得编码器转动方向为CW时，舵转动方向为CCW，反之亦然。所以要对称处理
 		if (steering_wheel->directive_part.encoder.parameter.encoder_directive_part_direction == DIRECTION_INVERSE)
@@ -311,5 +344,35 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolPosition(steering_wheel_t *ste
 STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolSpeed(steering_wheel_t *steering_wheel, uint16_t protocol_speed)
 {
 	steering_wheel->command.protocol_speed = protocol_speed;
+	return STEERING_WHEEL_OK;
+}
+STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolDegMode(steering_wheel_t *steering_wheel, uint8_t deg_mode)
+{
+	switch(deg_mode)
+	{
+		case ENABLE_OPTIMIZATION_STATE:
+		steering_wheel->parameter.deg_optimization=ENABLE_MINOR_DEG_OPTIMIZEATION;
+		break;
+		case DISABLE_OPTIMIZATION_STATE :
+		steering_wheel->parameter.deg_optimization=DISABLE_MINOR_DEG_OPTIMIZEATION;
+		break;
+		default:
+		break;
+	}	
+	return STEERING_WHEEL_OK;
+}
+STEERING_WHEEL_RETURN_T Steering_Wheel_SetProtocolArcMode(steering_wheel_t *steering_wheel, uint8_t arc_mode)
+{
+	switch(arc_mode)
+	{
+		case ENABLE_OPTIMIZATION_STATE:
+		steering_wheel->parameter.arc_optimization=ENABLE_MINOR_ARC_OPTIMIZEATION;
+		break;
+		case DISABLE_OPTIMIZATION_STATE :
+		steering_wheel->parameter.arc_optimization=DISABLE_MINOR_ARC_OPTIMIZEATION;
+		break;
+		default:
+		break;
+	}
 	return STEERING_WHEEL_OK;
 }

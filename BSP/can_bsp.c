@@ -27,13 +27,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		{
 			briter_encoder_feedback_handler(&steering_wheel.directive_part.encoder.briter_encoder, rxdata);
 		}
-		
-
 
 	}
 	if (hcan==&hcan2)
 	{
-		if (CAN_RxHeaderStruct.IDE == CAN_ID_EXT)
+		HAL_CAN_GetRxMessage(&hcan2,CAN_RX_FIFO0,&CAN_RxHeaderStruct,rxdata);
+	if (CAN_RxHeaderStruct.IDE == CAN_ID_EXT)
 			steering_communication_rx_handler(CAN_RxHeaderStruct.ExtId, rxdata);
 	}
 
@@ -54,6 +53,7 @@ void platform_filtter_config_setting(void)
 		CAN_FilterStructure.FilterMaskIdLow = 0x0000;
 		
 		HAL_CAN_ConfigFilter(&hcan1,&CAN_FilterStructure);
+	  CAN_FilterStructure.FilterBank = 15;
 		HAL_CAN_ConfigFilter(&hcan2,&CAN_FilterStructure);
 	#endif
 }

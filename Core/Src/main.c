@@ -21,13 +21,13 @@
 #include "can.h"
 #include "tim.h"
 #include "gpio.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 #include "M3508.h"
 #include "M3508_gear.h"
 #include "briter_encoder.h"
 #include "SW_control_task.h"
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,7 +59,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 
 
 
@@ -97,7 +96,6 @@ void canTX(void)
   * @brief  The application entry point.
   * @retval int
   */
-uint32_t tick_cnt;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -125,14 +123,17 @@ int main(void)
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_TIM3_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   platform_filtter_config_setting();
   HAL_CAN_Start(&hcan1);
   HAL_CAN_Start(&hcan2);
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
   HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
-
+	HAL_TIM_Base_Start_IT(&htim1);
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
   SW_control_task_init();
+ //briter_encoder_set_current_pos_zero_pos(&steering_wheel.directive_part.encoder.briter_encoder);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -142,10 +143,10 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		// 目前还懒得丢到定时器中断里
-		TASK_SCHEDULER();
+		// 目前还懒得丢到定时器中断�?
 		HAL_Delay(4);
-		tick_cnt++;
+	  
+	   //briter_encoder_set_CAN_ID(&steering_wheel.directive_part.encoder.briter_encoder,0x10);
   }
   /* USER CODE END 3 */
 }

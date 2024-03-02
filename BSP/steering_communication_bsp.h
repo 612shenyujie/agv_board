@@ -70,12 +70,12 @@ typedef struct
 	subscribe_param_t	param;
 }steering_communication_subscribe_list_unit_t;
 
-typedef struct
+typedef struct  __PACKED
 {
 	uint8_t		treated_flag; // 判断本数据包是否已经发送或接收。
-	uint8_t		cmd_id;
-	uint16_t	data2;
 	uint8_t		steering_id;
+	uint16_t	data2;
+	uint8_t		cmd_id;
 	int8_t		data1[8];
 }steering_communication_pack_t;
 

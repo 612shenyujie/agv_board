@@ -25,7 +25,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "pid_regulator.h"
 
-
 PID_Handle_t direction_motor_pid_handle, motion_motor_pid_handle;
 /** @addtogroup MCSDK
  * @{
@@ -311,6 +310,7 @@ __attribute__( ( section ( ".ccmram" ) ) )
  *         value minus the present process variable value
  * @retval computed PI output
  */
+
 __weak int16_t PI_Controller( PID_Handle_t * pHandle, int32_t wProcessVarError )
 {
   int32_t wProportional_Term, wIntegral_Term, wOutput_32, wIntegral_sum_temp;
@@ -391,7 +391,7 @@ __weak int16_t PI_Controller( PID_Handle_t * pHandle, int32_t wProcessVarError )
   }
   else { /* Nothing to do here */ }
 
-  pHandle->wIntegralTerm += wDischarge;
+//  pHandle->wIntegralTerm += wDischarge;
 
   return ( ( int16_t )( wOutput_32 ) );
 }

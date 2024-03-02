@@ -15,7 +15,11 @@ extern "C" {
 	#define STEERING_COMMUNICATION_HANDLE hcan2
 #endif
 
-#define DEFAULT_STEERING_CAN_ID 0x10U
+#define DEFAULT_STEERING_CAN_ID 0x1AU
+	#define A_STEERING_CAN_ID 0x1AU
+	#define B_STEERING_CAN_ID 0x1BU
+	#define C_STEERING_CAN_ID 0x1CU
+	#define D_STEERING_CAN_ID 0x1DU
 /* SYSTEM Settings, DONT CHANGE EASILY! --------------------------------------*/
 #define SUBSCRIBE_LIST_MAXIMUM_LENGTH 8
 /* Includes ------------------------------------------------------------------*/
@@ -25,7 +29,7 @@ extern "C" {
   */
 #include <stdint.h>
 #include "steering_communication_bsp.h"
-
+#include "steering_wheel.h"
 typedef enum
 {
 	STEERING_COMMUNICATION_OK,
@@ -42,9 +46,11 @@ typedef enum
 	
 	DISABLE_CONTROLLING		= 0x00U, // 默认强制停止运行
 	ENABLE_CONTROLLING		= 0x01U, 
+	SET_VELOCITY_VECTOR  	= 0x03U,
 	
 	GET_PID_PARAMETER		= 0x11U, // 获取 PID 参数值
 	SET_PID_PARAMETER		= 0x12U, // 设置 PID 参数值
+	
 
 	ADD_SUBSCRIBE_VALUE		= 0x0AU,
 	DELETE_SUBSCRIBED_VALUE	= 0x0BU,
@@ -65,7 +71,7 @@ typedef struct
 
 void steering_communication_init(void);
 STEERING_COMMUNICATION_RETURN_T steering_communication_rx_handler(uint32_t extid, uint8_t data1[]);
-
+STEERING_COMMUNICATION_RETURN_T steering_communication_SubscribeList_Scheduler(steering_wheel_t *steering);
 
 #ifdef __cplusplus
 }

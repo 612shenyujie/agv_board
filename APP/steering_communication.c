@@ -12,7 +12,7 @@
 #endif
 
 // Function prototypes
-static uint8_t platform_trans	(void *handle, uint32_t Ext_CANID, uint8_t aData[]);
+static uint8_t platform_trans(void *handle, uint32_t Ext_CANID, uint8_t aData[]);
 static uint8_t platform_get_msg	(void *handle, uint32_t Ext_CANID, uint8_t aData[]);
 void steering_communication_tx_queue_pop(steering_communication_ctx_t *ctx);	// 发送环形发送队列中的数据
 void steering_communication_tx_queue_push(steering_communication_pack_t pack);	// 将待发送数据送入环形发送队列中
@@ -26,15 +26,6 @@ steering_communication_ctx_t steering_communication_ctx;
 
 
 
-void steering_communication_test(steering_wheel_t steering)
-{
-	steering_communication_pack_t test_pack;
-	test_pack.cmd_id = 0x14;
-	uint64_t testdata1 = 0x1234567890ABCDEF;
-	memcpy(&test_pack.data1, &testdata1, sizeof(test_pack.data1));
-	test_pack.data2 = 0x0102;
-	steering_communication_SET_PID_PARAMETER_handler(&steering, test_pack);
-}
 
 /*
 	用于返回查询某个舵轮的指定 PID 的某环节值
@@ -77,11 +68,9 @@ uint64_t steering_communication_GET_PID_PARAMETER_term_handler(PID_Handle_t pid_
 */
 steering_communication_pack_t steering_communication_GET_PID_PARAMETER_handler(steering_wheel_t *steering, steering_communication_pack_t rx_pack)
 {
-	steering_communication_pack_t return_pack;
 	uint8_t term_offset_id, loop_offset_id;
 	memcpy(&loop_offset_id, &rx_pack.data2,		1);
 	memcpy(&term_offset_id, (uint8_t *)&rx_pack.data2+1,	1);
-	memcpy(&return_pack, &rx_pack, sizeof(rx_pack));
 	uint64_t processed_data1;
 	switch (loop_offset_id)
 	{
@@ -100,11 +89,10 @@ steering_communication_pack_t steering_communication_GET_PID_PARAMETER_handler(s
 		default:
 			break;
 	}
-	memcpy(&return_pack.data1, &processed_data1, sizeof(processed_data1)); // 除了数据区1的内容，其他原封不动
+	memcpy(&rx_pack.data1, &processed_data1, sizeof(processed_data1)); // 除了数据区1的内容，其他原封不动
 	// 添加返回标志位
 	rx_pack.cmd_id = RETURN_CMD_ID;
 	return rx_pack;
-	return return_pack;
 }
 
 
@@ -317,6 +305,7 @@ STEERING_COMMUNICATION_RETURN_T steering_communication_SubscribeList_TryDelete(s
 steering_communication_pack_t steering_communication_DELETE_SUBSCRIBED_VALUE_handler(steering_wheel_t *steering, steering_communication_pack_t rx_pack)
 {
 	// 先判断 subscribe_delete_offset_id 是否为 0
+	rx_pack.cmd_id	= RETURN_CMD_ID;
 	if (!rx_pack.data2)
 	{
 		uint8_t cnt = 8;
@@ -342,12 +331,68 @@ steering_communication_pack_t steering_communication_DELETE_SUBSCRIBED_VALUE_han
 }
 
 /*
+		用于处理 cmd_id 为 SET_VELOCITY_VECTOR 的情况
+*/
+
+steering_communication_pack_t steering_communication_SET_VELOCITY_VECTOR_handler(steering_wheel_t *steering, steering_communication_pack_t rx_pack)
+{
+	rx_pack.cmd_id	= RETURN_CMD_ID;
+	int16_t rx_data1_byte[4];
+	memcpy(&rx_data1_byte, &rx_pack.data1, sizeof(rx_data1_byte)); 
+  	Steering_Wheel_SetProtocolPosition(steering,rx_data1_byte[0]);
+	Steering_Wheel_SetProtocolSpeed(steering,rx_data1_byte[1]);
+	return rx_pack;
+}
+/*
+		用于处理cmd_id 为 DISABLE_CONTROLLING 的情况
+*/
+steering_communication_pack_t steering_communication_SET_DISABLE_OPERATION_MODE_handler(steering_wheel_t *steering, steering_communication_pack_t rx_pack)
+{
+	rx_pack.cmd_id	= RETURN_CMD_ID;
+	uint8_t deg_mode,arc_mode;
+	memcpy(&deg_mode,(uint8_t)&rx_pack.data2,1);
+	Steering_Wheel_SetProtocolDegMode(steering,deg_mode);
+	memcpy(&arc_mode,(uint8_t)&rx_pack.data2+1,1);
+	Steering_Wheel_SetProtocolArcMode(steering,arc_mode);
+	steering->parameter.enable=DISABLE_CONTROLLING;
+	return rx_pack;
+}
+/*
+	用于处理cmd_id 为 ENABLE_CONTROLLING 的情况
+*/
+steering_communication_pack_t steering_communication_SET_ENABLE_OPERATION_MODE_handler(steering_wheel_t *steering, steering_communication_pack_t rx_pack)
+{
+	rx_pack.cmd_id	= RETURN_CMD_ID;
+	uint8_t deg_mode,arc_mode;
+	memcpy(&deg_mode,(uint8_t)&rx_pack.data2,1);
+	Steering_Wheel_SetProtocolDegMode(steering,deg_mode);
+	memcpy(&arc_mode,(uint8_t)&rx_pack.data2+1,1);
+	Steering_Wheel_SetProtocolArcMode(steering,arc_mode);
+	steering->parameter.enable=ENABLE_CONTROLLING;
+	return rx_pack;
+}
+
+/*
+	用于处理cmd_id 为 CHECK_SUBSCRIBE_LIST 的情况
+*/
+
+steering_communication_pack_t steering_communication_CHECK_SUBSCRIBE_LIST_handler(steering_wheel_t *steering, steering_communication_pack_t rx_pack)
+{
+	rx_pack.cmd_id	= RETURN_CMD_ID;
+	for(int i;i<SUBSCRIBE_LIST_MAXIMUM_LENGTH;i++)
+	{
+		memcpy(&rx_pack.data1[i],&steering_communication_subscribe_list[i].param,1);
+	}
+	return rx_pack;
+}
+
+/*
 	供外部调用，用于初始化必要的外设与功能
 */
 void steering_communication_init(void)
 {
     /* Initialize transmission functions */
-    steering_communication_ctx.tx_cmd = platform_trans;
+    steering_communication_ctx.tx_cmd =platform_trans;
 	steering_communication_ctx.handle = &STEERING_COMMUNICATION_HANDLE;
     /* Initialize CAN driver interface */
     #if defined(STM32F105) | (STM32F407)
@@ -368,7 +413,15 @@ void steering_communication_init(void)
 STEERING_COMMUNICATION_RETURN_T steering_communication_rx_handler(uint32_t extid, uint8_t data1[])
 {
 	steering_communication_pack_t pack;
+	steering_wheel_t *temp_handle;
 	pack = steering_communication_receive_unpack(extid, data1);
+	temp_handle=Steering_FindSteeringHandle_via_CANID(pack.steering_id);
+	if (temp_handle==NULL)
+	{
+		return STEERING_COMMUNICATION_WRONG_PARAM;
+	}
+		else
+		{
 	switch (pack.cmd_id)
 	{
 		case GET_PID_PARAMETER:
@@ -383,19 +436,74 @@ STEERING_COMMUNICATION_RETURN_T steering_communication_rx_handler(uint32_t extid
 		case DELETE_SUBSCRIBED_VALUE:
 			pack = steering_communication_DELETE_SUBSCRIBED_VALUE_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
 			break;
+		case SET_VELOCITY_VECTOR:
+			pack = steering_communication_SET_VELOCITY_VECTOR_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+			break;
+		case DISABLE_CONTROLLING:
+			pack = steering_communication_SET_DISABLE_OPERATION_MODE_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+			break;
+		case ENABLE_CONTROLLING :
+			pack = steering_communication_SET_ENABLE_OPERATION_MODE_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+			break;
+		case CHECK_SUBSCRIBE_LIST :
+			pack = steering_communication_CHECK_SUBSCRIBE_LIST_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+			break;
 		default:
 			return STEERING_COMMUNICATION_WRONG_PARAM;
 			break;
 	}
-	steering_communication_transmit(steering_communication_ctx.handle, &pack);
+	steering_communication_transmit(&steering_communication_ctx, &pack);
 	return STEERING_COMMUNICATION_OK;
+		}
+	
+//	switch (pack.cmd_id)
+//	{
+//		case GET_PID_PARAMETER:
+//			pack = steering_communication_GET_PID_PARAMETER_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		case SET_PID_PARAMETER:
+//			pack = steering_communication_SET_PID_PARAMETER_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		case ADD_SUBSCRIBE_VALUE:
+//			pack = steering_communication_ADD_SUBSCRIBE_VALUE_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		case DELETE_SUBSCRIBED_VALUE:
+//			pack = steering_communication_DELETE_SUBSCRIBED_VALUE_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		case SET_VELOCITY_VECTOR:
+//			pack = steering_communication_SET_VELOCITY_VECTOR_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		case DISABLE_CONTROLLING:
+//			pack = steering_communication_SET_DISABLE_OPERATION_MODE_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		case ENABLE_CONTROLLING :
+//			pack = steering_communication_SET_ENABLE_OPERATION_MODE_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		case CHECK_SUBSCRIBE_LIST :
+//			pack = steering_communication_CHECK_SUBSCRIBE_LIST_handler(Steering_FindSteeringHandle_via_CANID(pack.steering_id), pack);
+//			break;
+//		default:
+//			return STEERING_COMMUNICATION_WRONG_PARAM;
+//			break;
+//	}
+
+//	if (Steering_FindSteeringHandle_via_CANID(pack.steering_id)==NULL)
+//	{
+//		return STEERING_COMMUNICATION_ERROR;
+//	}
+//	else
+//	{
+//	steering_communication_transmit(&steering_communication_ctx, &pack);
+//	return STEERING_COMMUNICATION_OK;
+//	}
 }
 /*
 	订阅消息调度处
 */
+	uint8_t fill_cnt=0;
+
 STEERING_COMMUNICATION_RETURN_T steering_communication_SubscribeList_Scheduler(steering_wheel_t *steering)
 {
-	uint8_t fill_cnt;
 	steering_communication_pack_t pack; // 待发送的数据包
 	// 填入基本的数据包参数
 	pack.steering_id	= steering->parameter.CANID;
@@ -429,7 +537,7 @@ STEERING_COMMUNICATION_RETURN_T steering_communication_SubscribeList_Scheduler(s
 		}
 		if (fill_cnt == 2) // 两个消息就会装满一个包，开始发送
 		{
-			steering_communication_transmit(steering_communication_ctx.handle, &pack);
+			steering_communication_transmit(&steering_communication_ctx, &pack);
 			// 发送完要清空数据区
 			memset(&pack.data1, 0, sizeof(pack.data1)); 
 			memset(&pack.data2, 0, sizeof(pack.data2)); 
@@ -439,7 +547,7 @@ STEERING_COMMUNICATION_RETURN_T steering_communication_SubscribeList_Scheduler(s
 	if (fill_cnt) // 遍历完 ，还有没有发送的包
 	{
 		// 把剩下的一个数据单独发送
-		steering_communication_transmit(steering_communication_ctx.handle, &pack);
+		steering_communication_transmit(&steering_communication_ctx, &pack);
 	}
 	
 }
@@ -468,6 +576,8 @@ static uint8_t platform_trans(void *handle, uint32_t Ext_CANID, uint8_t aData[])
 {
     #if defined(STM32F105) | (STM32F407)
         steering_communication_CAN_TxHeaderStruct.ExtId = Ext_CANID;
+	while (HAL_CAN_GetTxMailboxesFreeLevel(handle) == 0)
+	{}; // 等待邮箱清空
         return HAL_CAN_AddTxMessage(handle, &steering_communication_CAN_TxHeaderStruct, aData, &steering_communication_pTxMailbox);
     #endif
 }

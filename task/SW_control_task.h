@@ -14,9 +14,10 @@ extern "C" {
 
 void SW_control_task(void);
 void SW_control_task_init(void);
-
+void TASK_SCHEDULER(void);
+void SW_subscribe_task(void);
+	
 extern steering_wheel_t steering_wheel;
-
 #ifdef __cplusplus
 }
 #endif

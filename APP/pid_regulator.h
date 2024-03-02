@@ -38,7 +38,7 @@
   * in order to saturate the integral terms and the output value. This structure is
   * passed to each PID component function.
   */
-typedef struct PID_Handle
+typedef  struct PID_Handle
 {
   int16_t   hDefKpGain;           /**< Default @f$K_{pg}@f$ gain */
   int16_t   hDefKiGain;           /**< Default @f$K_{ig}@f$ gain */
