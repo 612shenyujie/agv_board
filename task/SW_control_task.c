@@ -1,6 +1,6 @@
 
 #include "SW_control_task.h"
-
+#include "chassis_power_control.h"
 steering_wheel_t steering_wheel;
 
 int16_t probe;

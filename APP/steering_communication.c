@@ -1,6 +1,6 @@
 #include "steering_communication.h"
 #include "steering_wheel.h"
-
+#include "chassis_power_control.h"
 #if defined(STM32F105) | (STM32F407)
     #include "can.h"
 #endif
@@ -336,12 +336,18 @@ steering_communication_pack_t steering_communication_DELETE_SUBSCRIBED_VALUE_han
 
 steering_communication_pack_t steering_communication_SET_VELOCITY_VECTOR_handler(steering_wheel_t *steering, steering_communication_pack_t rx_pack)
 {
-	rx_pack.cmd_id	= RETURN_CMD_ID;
+	// 修改为SET_VELOCITY_VECTOR的CMDID
+	rx_pack.cmd_id = SET_VELOCITY_VECTOR;
 	int16_t rx_data1_byte[4];
-	memcpy(&rx_data1_byte, &rx_pack.data1, sizeof(rx_data1_byte)); 
-  	Steering_Wheel_SetProtocolPosition(steering,rx_data1_byte[0]);
+	memcpy(rx_data1_byte, rx_pack.data1, sizeof(rx_data1_byte));
+	memcpy(chassis_power_control.scaled_power_32, rx_data1_byte+2, 4);
+	Steering_Wheel_SetProtocolPosition(steering, rx_data1_byte[0]);
 	Steering_Wheel_SetProtocolSpeed(steering,rx_data1_byte[1]);
-	return rx_pack;
+	if (chassis_power_control.scaled_power_32 != VALUE_OF_SCALED_POWER_COEFFICIENT_WHEN_SET_VECTOR_SPEED_ONLY)
+	{
+		chassis_power_control.motor_control_flag = 1;
+	}
+		return rx_pack;
 }
 /*
 		用于处理cmd_id 为 DISABLE_CONTROLLING 的情况

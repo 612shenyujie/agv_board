@@ -1,5 +1,6 @@
 #include "steering_wheel.h"
 #include "steering_communication.h"
+#include "chassis_power_control.h"
 #include <cmath>
 #if defined(STM32F105) | defined(STM32F407)
 	#include "can.h"
@@ -248,8 +249,9 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_MotorCommandUpdate(steering_wheel_t *stee
 		temp_err = steering_wheel->motion_part.command.protocol_speed*steering_wheel->parameter.invert_flag - steering_wheel->motion_part.status.protocol_speed;
 		steering_wheel->motion_part.motor.command.torque = PID_Controller(&steering_wheel->motion_part.motor.PID_Handles.velocity_loop_handle, temp_err);
 		#if defined(MOTION_MOTOR_M3508)
-			steering_wheel->motion_part.motor.M3508_kit.command.torque = steering_wheel->motion_part.motor.command.torque;
-		#endif
+		calculate_torque_current_according_to_scaled_power(chassis_power_control.scaled_power_32);
+		steering_wheel->motion_part.motor.M3508_kit.command.torque = steering_wheel->motion_part.motor.command.torque;
+#endif
 		// 转向电机角度环PID
 		
 		
@@ -329,7 +331,10 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_CommandTransmit(steering_wheel_t *steerin
 			M3508_gear_set_torque_current_lsb(&steering_wheel->directive_part.motor.M3508_kit, steering_wheel->directive_part.motor.M3508_kit.command.torque, SEND_COMMAND_NOW);
 		#endif
 		#if defined(MOTION_MOTOR_M3508)
-			M3508_gear_set_torque_current_lsb(&steering_wheel->motion_part.motor.M3508_kit, steering_wheel->motion_part.motor.M3508_kit.command.torque, SEND_COMMAND_NOW);
+		if(chassis_power_control.motor_control_flag)
+			{
+				M3508_gear_set_torque_current_lsb(&steering_wheel->motion_part.motor.M3508_kit, steering_wheel->motion_part.motor.M3508_kit.command.torque, SEND_COMMAND_NOW);
+			}
 		#endif
 		return STEERING_WHEEL_OK;
 	}
