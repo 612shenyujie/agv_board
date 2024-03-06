@@ -15,11 +15,7 @@ extern "C" {
 	#define STEERING_COMMUNICATION_HANDLE hcan2
 #endif
 
-#define DEFAULT_STEERING_CAN_ID 0x1AU
-	#define A_STEERING_CAN_ID 0x1AU
-	#define B_STEERING_CAN_ID 0x1BU
-	#define C_STEERING_CAN_ID 0x1CU
-	#define D_STEERING_CAN_ID 0x1DU
+
 /* SYSTEM Settings, DONT CHANGE EASILY! --------------------------------------*/
 #define SUBSCRIBE_LIST_MAXIMUM_LENGTH 8
 /* Includes ------------------------------------------------------------------*/

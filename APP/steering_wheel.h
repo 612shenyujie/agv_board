@@ -11,8 +11,30 @@ extern "C" {
 #define DIRECTIVE_MOTOR_M3508
 #define DIRECTIVE_ENCODER_BRITER_ENCODER
 #define MOTION_MOTOR_M3508
-
-
+/*************************************烧录必选项****************************************************/	
+//舵小板选择
+//#define AGV_BOARD_A //不同舵轮对应宏定义
+#define AGV_BOARD_B
+//#define AGV_BOARD_C
+//#define AGV_BOARD_D
+//兵种选择
+#define AGV_HERO
+//#define AGV_STANDARD	
+/*************************************烧录必选项****************************************************/		
+#define A_ENCODER_ID 0x0AU
+#define B_ENCODER_ID 0x0BU
+#define C_ENCODER_ID 0x0CU
+#define D_ENCODER_ID 0x0DU
+	
+#define A_ENCODER_ZERO_POSION 0x1202U
+#define B_ENCODER_ZERO_POSION 0x174CU
+#define C_ENCODER_ZERO_POSION 0x0ACEU
+#define D_ENCODER_ZERO_POSION 0x19CBU	
+	
+#define A_STEERING_CAN_ID 0x1AU
+#define B_STEERING_CAN_ID 0x1BU
+#define C_STEERING_CAN_ID 0x1CU
+#define D_STEERING_CAN_ID 0x1DU
 
 /* SYSTEM Settings, DONT CHANGE EASILY! --------------------------------------*/
 #define PROTOCOL_POSITION_LSBS		8191	// 统一的角度分辨率。从零点开始CW方向，将角度等分为 PROTOCOL_POSITION_LSBS 份。

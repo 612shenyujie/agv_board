@@ -130,9 +130,10 @@ int main(void)
   HAL_CAN_Start(&hcan2);
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
   HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
+	SW_control_task_init();
 	HAL_TIM_Base_Start_IT(&htim1);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-  SW_control_task_init();
+  
  //briter_encoder_set_current_pos_zero_pos(&steering_wheel.directive_part.encoder.briter_encoder);
   /* USER CODE END 2 */
 
