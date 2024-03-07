@@ -95,22 +95,53 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_HandleInit(steering_wheel_t *steering_whe
 		// 转向电机及其齿轮初始化
 		M3508_gear_parameter_t direction_motor_gear_init;
 		// 舵轮的传动齿轮是广义上的减速箱，所以给了减速比 (doge
+		#ifdef AGV_HERO
+		direction_motor_gear_init.reduction_rate	= 10;
+		direction_motor_gear_init.bus				= &M3508_bus_1;
+		direction_motor_gear_init.ESC_ID			= 1;
+		direction_motor_gear_init.resistance_torque	= 0;
+		direction_motor_gear_init.handle			= &hcan1;
+		#endif
+		#ifdef AGV_STANDARD
 		direction_motor_gear_init.reduction_rate	= 8;
 		direction_motor_gear_init.bus				= &M3508_bus_1;
 		direction_motor_gear_init.ESC_ID			= 1;
 		direction_motor_gear_init.resistance_torque	= 0;
 		direction_motor_gear_init.handle			= &hcan1;
+		#endif
+		
 		M3508_gear_parameter_init(&steering_wheel->directive_part.motor.M3508_kit, &direction_motor_gear_init);
 		// 动力电机及其齿轮初始化
 		M3508_gear_parameter_t motion_motor_gear_init;
+			#ifdef AGV_HERO
+		motion_motor_gear_init.reduction_rate		= 3591/187.f;
+		motion_motor_gear_init.bus					= &M3508_bus_1;
+		motion_motor_gear_init.ESC_ID				= 2;
+		motion_motor_gear_init.resistance_torque	= 0;
+		motion_motor_gear_init.handle			= &hcan1;
+		#endif
+		#ifdef AGV_STANDARD
 		motion_motor_gear_init.reduction_rate		= 14;
 		motion_motor_gear_init.bus					= &M3508_bus_1;
 		motion_motor_gear_init.ESC_ID				= 2;
 		motion_motor_gear_init.resistance_torque	= 0;
 		motion_motor_gear_init.handle			= &hcan1;
+		#endif
 		M3508_gear_parameter_init(&steering_wheel->motion_part.motor.M3508_kit, &motion_motor_gear_init);
 	#endif
-	steering_wheel->command.protocol_position = 0;
+		#ifdef AGV_BOARD_A
+		steering_wheel->command.protocol_position = A_ENCODER_ZERO_POSION;
+		#endif
+		#ifdef AGV_BOARD_B
+		steering_wheel->command.protocol_position = B_ENCODER_ZERO_POSION;
+		#endif
+		#ifdef AGV_BOARD_C
+		steering_wheel->command.protocol_position = C_ENCODER_ZERO_POSION;
+		#endif
+		#ifdef AGV_BOARD_D
+		steering_wheel->command.protocol_position = D_ENCODER_ZERO_POSION;
+		#endif
+	
 	#if defined(DIRECTIVE_ENCODER_BRITER_ENCODER)
 		// 编码器初始化
 		briter_encoder_Init(&steering_wheel->directive_part.encoder.briter_encoder);
@@ -118,15 +149,46 @@ STEERING_WHEEL_RETURN_T Steering_Wheel_HandleInit(steering_wheel_t *steering_whe
 		birter_encoder_init.baud_rate				= BRITER_ENCODER_SET_CAN_BAUD_RATE_1M;
 		birter_encoder_init.call_back_mode			= BRITER_ENCODER_SET_CALLBACK_REQUEST;
 		birter_encoder_init.increment_direction		= BRITER_ENCODER_INCREMENT_DIRECTION_CW;
-		birter_encoder_init.CAN_ID					= 0x10;
+		#ifdef AGV_BOARD_A
+		birter_encoder_init.CAN_ID					= A_ENCODER_ID;
+		#endif
+		#ifdef AGV_BOARD_B
+		birter_encoder_init.CAN_ID					= B_ENCODER_ID;
+		#endif
+		#ifdef AGV_BOARD_C
+		birter_encoder_init.CAN_ID					= C_ENCODER_ID;
+		#endif
+		#ifdef AGV_BOARD_D
+		birter_encoder_init.CAN_ID					= D_ENCODER_ID;
+		#endif
 		briter_encoder_parameter_init(&steering_wheel->directive_part.encoder.briter_encoder, &birter_encoder_init);
+		#ifdef AGV_HERO
+		steering_wheel->directive_part.encoder.parameter.lsbs_per_encoder_round			= 1024;
+		steering_wheel->directive_part.encoder.parameter.encoder_rounds_per_part_round	= 5;
+		steering_wheel->directive_part.encoder.parameter.lsbs_per_part_round = steering_wheel->directive_part.encoder.parameter.lsbs_per_encoder_round*steering_wheel->directive_part.encoder.parameter.encoder_rounds_per_part_round;
+		#endif
+		#ifdef AGV_STANDARD
 		steering_wheel->directive_part.encoder.parameter.lsbs_per_encoder_round			= 1024;
 		steering_wheel->directive_part.encoder.parameter.encoder_rounds_per_part_round	= 4;
 		steering_wheel->directive_part.encoder.parameter.lsbs_per_part_round = steering_wheel->directive_part.encoder.parameter.lsbs_per_encoder_round*steering_wheel->directive_part.encoder.parameter.encoder_rounds_per_part_round;
-	#endif
+		#endif
+		
+		#endif
 	
 	// 初始化舵轮 CAN ID
-	steering_wheel->parameter.CANID = A_STEERING_CAN_ID;
+	
+			#ifdef AGV_BOARD_A
+		steering_wheel->parameter.CANID = A_STEERING_CAN_ID;
+		#endif
+		#ifdef AGV_BOARD_B
+		steering_wheel->parameter.CANID = B_STEERING_CAN_ID;
+		#endif
+		#ifdef AGV_BOARD_C
+		steering_wheel->parameter.CANID = C_STEERING_CAN_ID;
+		#endif
+		#ifdef AGV_BOARD_D
+		steering_wheel->parameter.CANID = D_STEERING_CAN_ID;
+		#endif
 	steering_wheel->parameter.invert_flag = 1;//角度优化所用
 	steering_wheel->parameter.enable = STEERING_WHEEL_ACTIVATED;
 	if (Steering_HandleListAdd(steering_wheel))

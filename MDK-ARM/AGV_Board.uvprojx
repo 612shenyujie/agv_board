@@ -10,9 +10,8 @@
       <TargetName>AGV_Board</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pArmCC>5060528::V5.06 update 5 (build 528)::ARMCC</pArmCC>
-      <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
-      <uAC6>0</uAC6>
+      <pArmCC>5060422::V5.06 update 4 (build 422)::ARMCC</pArmCC>
+      <pCCUsed>5060422::V5.06 update 4 (build 422)::ARMCC</pCCUsed>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32F105RC</Device>
@@ -321,7 +320,7 @@
             <PlainCh>0</PlainCh>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
-            <wLevel>2</wLevel>
+            <wLevel>1</wLevel>
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
@@ -642,14 +641,14 @@
               <FilePath>..\APP\steering_wheel.c</FilePath>
             </File>
             <File>
-              <FileName>steering_communication.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\APP\steering_communication.c</FilePath>
-            </File>
-            <File>
               <FileName>chassis_power_control.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\APP\chassis_power_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>steering_communication.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\steering_communication.c</FilePath>
             </File>
           </Files>
         </Group>

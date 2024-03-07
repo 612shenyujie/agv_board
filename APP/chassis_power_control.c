@@ -4,8 +4,8 @@ chassis_power_control_t chassis_power_control;
 
 float calculate_torque_current_according_to_scaled_power(float scaled_power)
 {
-    float b = steering_wheel.motion_part.motor.M3508_kit.status.output_speed_rpm * TOQUE_COEFFICIENT;
-    float c = K2 * steering_wheel.motion_part.motor.M3508_kit.status.output_speed_rpm * steering_wheel.motion_part.motor.M3508_kit.status.output_speed_rpm - scaled_power + CONSTANT;
+    float b = steering_wheel.motion_part.motor.status.speed * TOQUE_COEFFICIENT;
+    float c = K2 * steering_wheel.motion_part.motor.status.speed * steering_wheel.motion_part.motor.status.speed - scaled_power + CONSTANT;
 
     if (steering_wheel.motion_part.motor.command.torque > 0) // Selection of the calculation formula according to the direction of the original moment
     {

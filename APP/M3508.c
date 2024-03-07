@@ -139,6 +139,7 @@ static uint8_t platform_trans(void *handle, uint16_t CAN_ID, uint8_t aData[])
 {
     #if defined(STM32F105) | (STM32F407)
         M3508_CAN_TxHeaderStruct.StdId = CAN_ID;
+	
         return HAL_CAN_AddTxMessage(handle, &M3508_CAN_TxHeaderStruct, aData, &M3508_pTxMailbox);
     #endif
 }
